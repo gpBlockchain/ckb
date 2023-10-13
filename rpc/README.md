@@ -1,7 +1,7 @@
 # CKB JSON-RPC Protocols
 
 <!--**NOTE:** This file is auto-generated from code comments.-->
-
+1
 The RPC interface shares the version of the node version, which is returned in `local_node_info`. The interface is fully compatible between patch versions, for example, a client for 0.25.0 should work with 0.25.x for any x.
 
 Allowing arbitrary machines to access the JSON-RPC port (using the `rpc.listen_address` configuration option) is **dangerous and strongly discouraged**. Please strictly limit the access to only trusted machines.
