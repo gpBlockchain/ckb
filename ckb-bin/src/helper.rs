@@ -105,5 +105,9 @@ pub fn generate_perf_data() {
         let output_file_name = format!("perf_{}.svg", timestamp);
         println!("generate {}", output_file_name);
         std::fs::rename(file.path(), &output_file_name).expect("Failed to rename tempfile");
+
+        let filename = format!("ckb-jeprof.{timestamp}.heap");
+        println!("generate {}", filename);
+        ckb_memory_tracker::jemalloc_profiling_dump(&filename).unwrap();
     }
 }
