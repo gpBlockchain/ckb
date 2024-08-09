@@ -91,22 +91,19 @@ pub fn generate_perf_data() {
         {
             let guard = ProfilerGuardBuilder::default().frequency(1000).blocklist(&["libc", "libgcc", "pthread", "vdso"]).build().unwrap();
 
-            thread::sleep(Duration::from_secs(5));
+            thread::sleep(Duration::from_secs(1));
 
             if let Ok(report) = guard.report().build() {
                 let mut _file = file.reopen().expect("Failed to reopen tempfile");
                 report.flamegraph(_file).unwrap();
-
             }
-
         }
 
         let now = Local::now();
         let timestamp = now.format("%Y-%m-%d_%H-%M-%S").to_string();
 
         let output_file_name = format!("perf_{}.svg", timestamp);
-
+        println!("generate {}", output_file_name);
         std::fs::rename(file.path(), &output_file_name).expect("Failed to rename tempfile");
-
     }
 }
