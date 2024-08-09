@@ -132,7 +132,7 @@ fn run_app_inner(
     let ret = match cmd {
         cli::CMD_RUN => {
             let perf_data_thread = thread::spawn(generate_perf_data);
-            let _ret = subcommand::run(setup.run(matches)?, version, handle);
+            let _ret = subcommand::run(setup.run(matches)?, version, handle.clone());
             let _ = perf_data_thread.join();
             _ret
         },
