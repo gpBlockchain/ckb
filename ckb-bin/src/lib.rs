@@ -12,6 +12,8 @@ use ckb_network::tokio;
 use clap::ArgMatches;
 use helper::raise_fd_limit;
 use setup_guard::SetupGuard;
+use helper::generate_perf_data;
+use std::thread;
 
 #[cfg(not(target_os = "windows"))]
 use colored::Colorize;
@@ -128,7 +130,12 @@ fn run_app_inner(
     raise_fd_limit();
 
     let ret = match cmd {
-        cli::CMD_RUN => subcommand::run(setup.run(matches)?, version, handle.clone()),
+        cli::CMD_RUN => {
+            let perf_data_thread = thread::spawn(generate_perf_data);
+            let _ret = subcommand::run(setup.run(matches)?, version, handle);
+            let _ = perf_data_thread.join();
+            _ret
+        },
         cli::CMD_MINER => subcommand::miner(setup.miner(matches)?, handle.clone()),
         cli::CMD_REPLAY => subcommand::replay(setup.replay(matches)?, handle.clone()),
         cli::CMD_EXPORT => subcommand::export(setup.export(matches)?, handle.clone()),

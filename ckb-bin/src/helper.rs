@@ -2,6 +2,13 @@ use ckb_logger::debug;
 
 use std::io::{stdin, stdout, Write};
 
+
+use chrono::prelude::Local;
+use pprof::ProfilerGuardBuilder;
+use std::thread;
+use std::time::Duration;
+use tempfile::NamedTempFile;
+
 #[cfg(not(feature = "deadlock_detection"))]
 pub fn deadlock_detection() {}
 
@@ -74,5 +81,32 @@ pub fn prompt(msg: &str) -> String {
 pub fn raise_fd_limit() {
     if let Some(limit) = fdlimit::raise_fd_limit() {
         debug!("raise_fd_limit newly-increased limit: {}", limit);
+    }
+}
+
+pub fn generate_perf_data() {
+    loop {
+        let file = NamedTempFile::new().expect("Failed to create tempfile");
+
+        {
+            let guard = ProfilerGuardBuilder::default().frequency(1000).blocklist(&["libc", "libgcc", "pthread", "vdso"]).build().unwrap();
+
+            thread::sleep(Duration::from_secs(5));
+
+            if let Ok(report) = guard.report().build() {
+                let mut _file = file.reopen().expect("Failed to reopen tempfile");
+                report.flamegraph(_file).unwrap();
+
+            }
+
+        }
+
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d_%H-%M-%S").to_string();
+
+        let output_file_name = format!("perf_{}.svg", timestamp);
+
+        std::fs::rename(file.path(), &output_file_name).expect("Failed to rename tempfile");
+
     }
 }
