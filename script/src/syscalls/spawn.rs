@@ -6,6 +6,7 @@ use crate::types::{DataLocation, DataPieceId, Fd, Message, SgData, SpawnArgs, Vm
 use ckb_traits::{CellDataProvider, ExtensionProvider, HeaderProvider};
 use ckb_vm::{
     Error as VMError, Register,
+    error::OutOfBoundKind,
     machine::SupportMachine,
     memory::Memory,
     registers::{A0, A1, A2, A3, A4, A7},
@@ -124,7 +125,7 @@ where
             return Ok(true);
         }
         if length > 0 {
-            let end = offset.checked_add(length).ok_or(VMError::MemOutOfBound)?;
+            let end = offset.checked_add(length).ok_or(VMError::MemOutOfBound(offset, OutOfBoundKind::Memory))?;
             if end > full_length {
                 machine.set_register(A0, Mac::REG::from_u8(SLICE_OUT_OF_BOUND));
                 return Ok(true);

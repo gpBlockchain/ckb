@@ -9,6 +9,7 @@ use crate::{
 use ckb_traits::{CellDataProvider, ExtensionProvider, HeaderProvider};
 use ckb_vm::{
     Bytes, Error as VMError, Register, SupportMachine, Syscalls,
+    error::OutOfBoundKind,
     memory::{FLAG_EXECUTABLE, FLAG_FREEZED, Memory},
     registers::{A0, A1, A2, A3, A4, A5, A7},
     snapshot2::Snapshot2Context,
@@ -144,7 +145,7 @@ where
         };
         let content_end = content_offset
             .checked_add(content_size)
-            .ok_or(VMError::MemOutOfBound)?;
+            .ok_or(VMError::MemOutOfBound(content_offset, OutOfBoundKind::Memory))?;
         if content_offset >= cell.len() as u64
             || content_end > cell.len() as u64
             || content_size > memory_size
