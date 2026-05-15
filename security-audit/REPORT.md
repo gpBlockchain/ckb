@@ -3,8 +3,8 @@
 > **审计对象**: gpBlockchain/ckb（Nervos CKB Layer-1 区块链节点 Rust 实现）  
 > **审计方法**: 基于 [`security-audit` SKILL](https://github.com/gpBlockchain/ckb-test-skills/blob/main/.claude/skills/security-audit/SKILL.md) 四阶段静态代码审计 + 配置审视  
 > **审计范围**: 仓库内 ~70 Cargo workspace crates / ~809 Rust 源文件  
-> **审计深度**: P0 全部完成（28 项）；P1/P2/P3 待续  
-> **报告日期**: 2026-05-15
+> **审计深度**: P0 全部完成（28 项）+ P1 部分完成（11 项，覆盖 DB / SQL / ERRINFO / panic / CSPRNG / since）；P1 剩余 + P2/P3 待续  
+> **报告日期**: 2026-05-15（v2 — 含 Round 6/7 增量）
 
 ---
 
@@ -22,6 +22,12 @@ CKB 节点的整体安全工程实践处于**业界优秀水平**。核心共识
 
 P0 阶段共计审计 28 项，发现 **0 个 Critical / High**、**1 个 Medium**、**3 个 Low**、**多个 Info / 待动态验证**。无任何会直接导致资金被盗、双花、共识分裂的现实可达漏洞；所发现问题主要为**代码质量、防御一致性、配置流程**层面，已记录修复建议。
 
+**Round 6/7（P1 增量）** 新增审计 11 项，新增发现：
+- **1 个 Medium**: AUDIT-ERRINFO-002（sentry 上报含 `org_contact` 等 PII，`before_send` 缺通用过滤）
+- **2 个 Low**: AUDIT-MEMORY-005（`pool.rs` 反模式 ≥2 处 / `transaction_verifier.rs` 可达 `expect("...exist")`）、AUDIT-CRYPTO-005（`thread_rng` 是 CSPRNG 但文档未明确，缺编译期 trait bound）
+- **多个 Info**: AUDIT-DB-001（后台迁移 worker 缺 Err 日志）、AUDIT-LOGIC-007（since 加法可改 checked_add）、AUDIT-LOGIC-008（reorg 期间长 cycle 验证需动态验证）、AUDIT-CRYPTO-006（建议核对 Privkey Zeroize）
+- **关键阴性结论**: AUDIT-DB-002 SQL 注入排查通过（全部 `bind()` 参数化 + `escape_and_wrap_for_postgres_like`）；AUDIT-CRYPTO-004 hash 分域由 molecule schema 保证
+
 ---
 
 ## 2. 风险评级总览
@@ -30,11 +36,11 @@ P0 阶段共计审计 28 项，发现 **0 个 Critical / High**、**1 个 Medium
 |---|---|---|
 | 🔴 Critical | 0 | — |
 | 🟠 High | 0 | — |
-| 🟡 Medium | 1 | AUDIT-CRYPTO-001 |
-| 🟢 Low | 3 | AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 |
-| 🔵 Info / 设计约束 | 7 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-DEPS-002 / AUDIT-AUTH-001（建议增强）/ AUDIT-ERRINFO-001（与 ERRINFO-002 联动） |
-| ⚠️ 需动态验证 | 1 | AUDIT-DEPS-001（cargo audit）|
-| ✅ 通过 | 16 | 其余 P0 项 |
+| 🟡 Medium | 2 | AUDIT-CRYPTO-001 / AUDIT-ERRINFO-002 |
+| 🟢 Low | 5 | AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 |
+| 🔵 Info / 设计约束 | 11 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-DEPS-002 / AUDIT-AUTH-001（建议增强）/ AUDIT-DB-001 / AUDIT-LOGIC-007 / AUDIT-LOGIC-008 / AUDIT-CRYPTO-006 / AUDIT-ERRINFO-001 |
+| ⚠️ 需动态验证 | 1 | AUDIT-DEPS-001（cargo audit） |
+| ✅ 通过 | 20 | 其余 P0 + P1 已审项 |
 
 ---
 
@@ -139,22 +145,22 @@ let withdraw_capacity =
 
 ## 4. 审计覆盖矩阵
 
-| 维度 | 已审 P0 项 | 通过 | 发现 | 占覆盖率 |
+| 维度 | 已审项 | 通过 | 发现 | 占覆盖率 |
 |---|---|---|---|---|
-| DIM-INPUT | 4 / 7 | 3 ✅ | 1 ℹ️ | 57% |
+| DIM-INPUT | 6 / 7 | 5 ✅ | 1 ℹ️ | 86% |
 | DIM-SERDE | 2 / 5 | 2 ✅ | 0 | 40% |
-| DIM-CRYPTO | 3 / 6 | 2 ✅ | 1 🟡 | 50% |
-| DIM-LOGIC | 6 / 9 | 4 ✅ | 2 (1🟢 1ℹ️) | 67% |
+| DIM-CRYPTO | 6 / 6 | 4 ✅ | 1 🟡 + 1 🟢 | 100% |
+| DIM-LOGIC | 8 / 9 | 6 ✅ | 2 (1🟢 + 1ℹ️) | 89% |
 | DIM-CONTRACT | 4 / 6 | 3 ✅ | 1 🟢 | 67% |
-| DIM-MEMORY | 4 / 7 | 4 ✅ | 0 | 57% |
+| DIM-MEMORY | 5 / 7 | 4 ✅ | 1 🟢 | 71% |
 | DIM-AUTH | 1 / 4 | 1 ✅ | 0 | 25% |
 | DIM-DEPS | 2 / 5 | 0 | 2 (1⚠️ 1ℹ️) | 40% |
-| DIM-ERRINFO | 1 / 4 | 1 ✅ | 0 | 25% |
+| DIM-ERRINFO | 2 / 4 | 1 ✅ | 1 🟡 | 50% |
 | DIM-SPEC | 0 / 5 | — | — | 0% |
 | NET 专项 | 2 / 5 | 2 ✅ | 0 | 40% |
-| DB 专项 | 0 / 3 | — | — | 0% |
+| DB 专项 | 2 / 3 | 1 ✅ | 1 ℹ️ | 67% |
 
-**总计**: 29 / 66 项（44%）。**P0 全部完成（28 项）**，剩余为 P1/P2/P3 项。
+**总计**: 40 / 66 项（61%）。**P0 全部完成（28 项）+ P1 11 项**，剩余主要为 DIM-SPEC（RFC 映射）、AUTH/DEPS/SERDE/NET/ERRINFO 的 P1-P3 项。
 
 ---
 
@@ -208,14 +214,16 @@ let withdraw_capacity =
 
 ## 7. 未完成项与下一步
 
-P1/P2/P3 阶段共 **37 项**待审，重点项：
+P1/P2/P3 阶段剩余 **26 项**待审（Round 6/7 已完成 11 项），重点项：
 
 - **DIM-SPEC（5 项 / 0% 覆盖）**: 与 Nervos RFC-0017/0019/0020/0022/0023/0032/0042 的逐条代码映射 — 需消耗较多深度审计 budget
-- **AUDIT-DB-001/002/003**: 数据库迁移可恢复性、rich-indexer SQL 注入、freezer 一致性
-- **AUDIT-MEMORY-005**: 外部可触发 panic 路径（`unwrap`/`expect`/`assert!`）全仓扫描
-- **AUDIT-CRYPTO-005/006**: CSPRNG 使用清单、敏感对比恒定时间
-- **AUDIT-ERRINFO-002**: sentry 上报内容审视
-- **AUDIT-NET-003/004/005**: CompactBlock short-id 冲突、DNS-seed 劫持、Tor fingerprint
+- **AUDIT-DB-003**: freezer 冷热切换一致性
+- **AUDIT-AUTH-002/003/004**: Alert 协议签名者列表 / 监听地址文档 / 密钥文件权限
+- **AUDIT-DEPS-003/004/005**: deny.toml 复核 / feature flags / 供应链
+- **AUDIT-NET-003/004/005**: CompactBlock short-id 冲突 / DNS-seed 劫持 / Tor fingerprint
+- **AUDIT-ERRINFO-003/004**: 脚本错误 oracle / 静默 Result 扫描
+- **AUDIT-MEMORY-006/007**: rocksdb 写放大 / indexer 大查询超时
+- **AUDIT-CONTRACT-005/006**: ScriptGroup 去重 / 扩展 fuzz
 
 完整待审列表见 [`SECURITY_AUDIT_TODO.md`](SECURITY_AUDIT_TODO.md) 第 1-12 章中所有未带 `[x]`/`[!]` 标记的条目。
 
@@ -230,6 +238,8 @@ P1/P2/P3 阶段共 **37 项**待审，重点项：
 - [`rounds/round-03-script-host.md`](rounds/round-03-script-host.md) — AUDIT-CONTRACT-002/003/004 + AUDIT-MEMORY-001
 - [`rounds/round-04-rpc-and-deps.md`](rounds/round-04-rpc-and-deps.md) — AUDIT-INPUT-001/002 + AUDIT-AUTH-001 + AUDIT-DEPS-001/002 + AUDIT-ERRINFO-001
 - [`rounds/round-05-consensus-details-and-serde.md`](rounds/round-05-consensus-details-and-serde.md) — AUDIT-LOGIC-002/004/005 + AUDIT-SERDE-001/002
+- [`rounds/round-06-db-sql-errinfo.md`](rounds/round-06-db-sql-errinfo.md) — AUDIT-DB-001/002 + AUDIT-ERRINFO-002 + AUDIT-INPUT-005/007
+- [`rounds/round-07-panic-crypto-since.md`](rounds/round-07-panic-crypto-since.md) — AUDIT-MEMORY-005 + AUDIT-CRYPTO-004/005/006 + AUDIT-LOGIC-007/008
 
 ### 附录 B — SSoT 文档
 
@@ -240,7 +250,7 @@ P1/P2/P3 阶段共 **37 项**待审，重点项：
 本审计严格遵循 [`security-audit` SKILL](https://github.com/gpBlockchain/ckb-test-skills/blob/main/.claude/skills/security-audit/SKILL.md)：
 
 - **Phase 0 侦察建档** → 完成项目技术栈识别、模块/数据流/信任边界绘制、AUDIT-ID 行号化
-- **Phase 1 逐项审计** → 5 轮 P0 深度审计，每轮 5-6 项
+- **Phase 1 逐项审计** → 5 轮 P0 深度审计（每轮 5-6 项）+ 2 轮 P1 增量审计（Round 6/7，每轮 5-6 项）
 - **Phase 2 TODO 文档更新** → 附录 A 执行日志、附录 B 新增项、附录 C 修复建议持续同步
 - **Phase 3 输出报告** → 本文件
 

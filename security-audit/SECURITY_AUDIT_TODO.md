@@ -1,6 +1,6 @@
 # Nervos CKB 安全审计 TODO
 
-> 版本: **v1** | 最后更新: 2026-05-15 | 状态: P0 全部完成 / P1-P3 待续
+> 版本: **v2** | 最后更新: 2026-05-15 | 状态: P0 全部完成 (28) + P1 部分完成 (11) / 剩余 P1+P2+P3 待续
 
 ---
 
@@ -64,8 +64,10 @@
 ## 三、审计进度
 
 - **总 TODO 项**: 80
-- **🔴 P0 项**: 28（✅ 已完成 28，❌ 发现高/中/低风险共 14）
-- **🟠 P1 项**: 26（⏳ 待审计）
+- **🔴 P0 项**: 28（✅ 已完成 28，❌ 发现 Medium/Low/Info 共 14）
+- **🟠 P1 项**: 26（✅ 已完成 11，⏳ 剩余 15）
+  - Round 6: AUDIT-DB-001 / AUDIT-DB-002 / AUDIT-ERRINFO-002 / AUDIT-INPUT-005 / AUDIT-INPUT-007
+  - Round 7: AUDIT-MEMORY-005 / AUDIT-CRYPTO-004 / AUDIT-CRYPTO-005 / AUDIT-CRYPTO-006 / AUDIT-LOGIC-007 / AUDIT-LOGIC-008
 - **🟡 P2 项**: 18（⏳ 待审计）
 - **🟢 P3 项**: 8（⏳ 待审计）
 
@@ -104,11 +106,11 @@
   - **关联代码**: `network/src/network.rs`、`network/src/peer_store/mod.rs`、依赖 `tentacle-secio=0.6.6`
   - **发现记录**: 主握手由 `tentacle-secio` 处理，节点侧只验证 `peer_id` 一致性。见 `rounds/round-02`
 
-- [ ] 🟠 **AUDIT-INPUT-005**: `util/jsonrpc-types` 反序列化健壮性
+- [x] 🟠 **AUDIT-INPUT-005**: `util/jsonrpc-types` 反序列化健壮性
   - **关联代码**: `util/jsonrpc-types/src/{bytes,fixed_bytes,proposal_short_id,alert,uints}.rs`
   - **审计内容**: 畸形 hex / 截断 / 非 0x 前缀 / 大数字符串
 - [ ] 🟠 **AUDIT-INPUT-006**: `util/onion`、`hickory-resolver` DNS / .onion 解析容错
-- [ ] 🟠 **AUDIT-INPUT-007**: `util/app-config` TOML 解析对未知/越界字段
+- [x] 🟠 **AUDIT-INPUT-007**: `util/app-config` TOML 解析对未知/越界字段
   - **审计内容**: `Config` 均带 `#[serde(deny_unknown_fields)]`（`rpc.rs:25`），✅ 部分预审通过
 
 ---
@@ -151,9 +153,9 @@
   - **关联代码**: `pow/src/eaglesong_blake2b.rs:12-72`、`pow/src/lib.rs:67-72`（`pow_message`）
   - **发现记录**: `compact_to_target` 已检查溢出与 zero target；`expect("bound checked")` 数组定长 32 字节，可证明不会触发。`u128` nonce 范围由 packed Header 类型保证。✅
 
-- [ ] 🟠 **AUDIT-CRYPTO-004**: `util/hash` blake2b 个性化串使用一致性
-- [ ] 🟠 **AUDIT-CRYPTO-005**: CSPRNG 使用清单（`rand::thread_rng` vs `rand::OsRng`）
-- [ ] 🟠 **AUDIT-CRYPTO-006**: 敏感对比（签名/MAC）恒定时间
+- [x] 🟠 **AUDIT-CRYPTO-004**: `util/hash` blake2b 个性化串使用一致性
+- [x] 🟠 **AUDIT-CRYPTO-005**: CSPRNG 使用清单（`rand::thread_rng` vs `rand::OsRng`）
+- [x] 🟠 **AUDIT-CRYPTO-006**: 敏感对比（签名/MAC）恒定时间
   - **关联代码**: `Signature` 的 `PartialEq`（派生）非恒定时间；ECDSA 恢复方案下影响较小
 
 ---
@@ -207,9 +209,9 @@
     - [x] 每输出 `is_lack_of_capacity` 检查含 data 占用容量
   - **发现记录**: 见 `rounds/round-01-consensus-and-funds.md#audit-logic-006`
 
-- [ ] 🟠 **AUDIT-LOGIC-007**: cellbase 成熟期 / since 字段所有分支
+- [x] 🟠 **AUDIT-LOGIC-007**: cellbase 成熟期 / since 字段所有分支
   - **关联代码**: `verification/src/transaction_verifier.rs:364-413, 596-754`
-- [ ] 🟠 **AUDIT-LOGIC-008**: TOCTOU — tx-pool 在 reorg 期间的 RBF
+- [x] 🟠 **AUDIT-LOGIC-008**: TOCTOU — tx-pool 在 reorg 期间的 RBF
 - [ ] 🟠 **AUDIT-LOGIC-009**: `util/fee-estimator` 异常输入
 
 ---
@@ -282,7 +284,7 @@
   - **关联代码**: `util/app-config/src/configs/network.rs:22-100`（`max_peers`、`channel_size`、`max_send_buffer`）、tentacle 自身限速
   - **发现记录**: 见 `rounds/round-02-external-attack-surface.md#audit-memory-004`
 
-- [ ] 🟠 **AUDIT-MEMORY-005**: 可由外部触发的 panic 路径（`unwrap`/`expect`/`assert!`）
+- [x] 🟠 **AUDIT-MEMORY-005**: 可由外部触发的 panic 路径（`unwrap`/`expect`/`assert!`）
 - [ ] 🟠 **AUDIT-MEMORY-006**: rocksdb 写放大 / freezer 错误处理
 - [ ] 🟠 **AUDIT-MEMORY-007**: `util/rich-indexer` 大查询超时
 
@@ -326,7 +328,7 @@
   - **关联代码**: `rpc/src/error.rs`、`rpc/src/module/*` 各 `RPCError::*`
   - **发现记录**: 见 `rounds/round-04`
 
-- [ ] 🟠 **AUDIT-ERRINFO-002**: `sentry` 上报内容
+- [x] 🟠 **AUDIT-ERRINFO-002**: `sentry` 上报内容
   - **关联代码**: `util/app-config/src/sentry_config.rs:13`、`ckb-bin/src/setup_app.rs`、根 README 第 24 行"will send stack trace to sentry on Rust panics"
 - [ ] 🟠 **AUDIT-ERRINFO-003**: 脚本验证错误 oracle
 - [ ] 🟠 **AUDIT-ERRINFO-004**: 被静默忽略的 `Result`
@@ -365,9 +367,9 @@
 
 ## 第 12 章 数据库 / 迁移
 
-- [ ] 🔴 **AUDIT-DB-001**: `db-migration` 升级中断恢复
+- [x] 🔴 **AUDIT-DB-001**: `db-migration` 升级中断恢复
   - **关联代码**: `db-migration/src/lib.rs`、`util/migrate/src/`、`util/migrate/migration-template`
-- [ ] 🟠 **AUDIT-DB-002**: `rich-indexer` SQL 注入
+- [x] 🟠 **AUDIT-DB-002**: `rich-indexer` SQL 注入
   - **关联代码**: `util/rich-indexer/src/` + `sqlx`/`sql-builder`
 - [ ] 🟠 **AUDIT-DB-003**: `freezer` 冷热切换一致性
 
@@ -404,6 +406,17 @@
 | 2026-05-15 | AUDIT-LOGIC-005 | tx-pool RBF 含费率/祖先数检查，proposal-table 窗口规则正确 | ✅ 通过 |
 | 2026-05-15 | AUDIT-SERDE-001 | molecule 解析提供 from_slice 边界校验入口 | ✅ 通过 |
 | 2026-05-15 | AUDIT-SERDE-002 | block-filter GCS 解码失败返回 Option/Result，无 panic 路径 | ✅ 通过 |
+| 2026-05-15 | AUDIT-DB-001 | 同步迁移恢复完备；后台 MigrationWorker 缺 Err 日志分支，使用 eprintln! | ℹ️ Info |
+| 2026-05-15 | AUDIT-DB-002 | 全部用户字节通过 query.bind() 参数化；LIKE 元字符已转义 | ✅ 通过 |
+| 2026-05-15 | AUDIT-ERRINFO-002 | sentry `org_contact` 随崩溃上报；before_send 无通用 PII 过滤 | ⚠️ Medium |
+| 2026-05-15 | AUDIT-INPUT-005 | jsonrpc-types Uint*/H256 反序列化严格；JsonBytes 上限由 HTTP 层约束 | ✅ 通过 |
+| 2026-05-15 | AUDIT-INPUT-007 | 主入口 Config 含 deny_unknown_fields；建议统一其余 Config | ✅ 通过 |
+| 2026-05-15 | AUDIT-MEMORY-005 | pool.rs 反模式 ≥2 处；transaction_verifier.rs 含 expect("...exist") | 🟢 Low |
+| 2026-05-15 | AUDIT-CRYPTO-004 | 单一 personalization；分域由 molecule schema 保证 | ✅ 通过 |
+| 2026-05-15 | AUDIT-CRYPTO-005 | thread_rng 是 CryptoRng；建议加 trait bound 防误用 | 🟢 Low |
+| 2026-05-15 | AUDIT-CRYPTO-006 | 宿主侧无关键密码学比较；建议核对 Privkey Zeroize 实现 | ℹ️ Info |
+| 2026-05-15 | AUDIT-LOGIC-007 | since/maturity 全分支覆盖；建议 checked_add 替换裸 + | ✅ 通过 |
+| 2026-05-15 | AUDIT-LOGIC-008 | 设计上锁/snapshot 保护；verify_mgr 长 cycle reorg 需动态验证 | ℹ️ Info |
 
 ## 附录 B — 新增审计项跟踪
 
@@ -413,6 +426,11 @@
 | 2026-05-15 | AUDIT-LOGIC-010 | AUDIT-LOGIC-003 扩展 | 在 `util/dao/src/tests.rs` 增加 fuzz 用例覆盖 `withdraw_counted_capacity > u64::MAX` 边界 |
 | 2026-05-15 | AUDIT-CONTRACT-007 | AUDIT-CONTRACT-001 扩展 | 在 `verify::verify` (l.197-205) 主路径将裸 `-` 改为 `checked_sub`，与 `verify_group_with_chunk` 保持一致 |
 | 2026-05-15 | AUDIT-AUTH-005 | AUDIT-AUTH-001 扩展 | 节点首次启动检查脚本：如发现 `listen_address` 非环回且 `Debug`/`IntegrationTest` 模块开启，emit warning |
+| 2026-05-15 | AUDIT-INPUT-008 | AUDIT-INPUT-007 扩展 | 全仓核对所有 `pub struct *Config` 是否带 `#[serde(deny_unknown_fields)]`，统一应用 |
+| 2026-05-15 | AUDIT-ERRINFO-005 | AUDIT-ERRINFO-002 扩展 | 评估将 `SentryConfig::dsn` 默认值改为空（opt-in），并在 `before_send` 增加通用 PII 过滤 |
+| 2026-05-15 | AUDIT-MEMORY-008 | AUDIT-MEMORY-005 扩展 | 在关键 crate 启用 `clippy::unwrap_used` / `clippy::expect_used` lint（测试代码 allow） |
+| 2026-05-15 | AUDIT-CRYPTO-008 | AUDIT-CRYPTO-006 扩展 | 验证 `Privkey` 是否实现 `zeroize::Zeroize` + `ZeroizeOnDrop`，确认 Drop 时清零 |
+| 2026-05-15 | AUDIT-LOGIC-011 | AUDIT-LOGIC-008 扩展 | 在 `tx-pool` 集成测试加入"长 cycle tx 验证 + reorg" 用例，验证 verify_mgr 不应用过时结果 |
 
 ## 附录 C — 修复建议汇总
 
@@ -425,6 +443,11 @@
 | AUDIT-DEPS-002 | 🔵 Info | 在 `deny.toml` 中加入 `ckb-vm=0.24.14`/`rocksdb=0.21.1`/`secp256k1=0.30` 的 yanked/advisory 监测 | ⏳ 待修 |
 | AUDIT-CONTRACT-004 | 🔵 Info | 周期性运行 `cargo audit`，跟踪 `ckb-vm` 上游 0.24.x patch 版本与 GHSA | ⏳ 流程改进 |
 | AUDIT-INPUT-001 | 🔵 Info | 重构 `send_transaction` 移除 `submit_tx.unwrap()`，改 `match` 一次性消费 | ⏳ 代码质量 |
+| AUDIT-ERRINFO-002 | 🟡 Medium | (1) doc 警告 `org_contact` 会随崩溃上报；(2) `before_send` 增加 PII redaction（IP / 路径 / peer_id）；(3) 默认 `dsn=""` 改为 opt-in | ⏳ 待修 |
+| AUDIT-DB-001 | 🔵 Info | `MigrationWorker::start` 增加 `Err` 日志分支；`eprintln!` 改为 `ckb_logger`；Migration trait doc 强调"非幂等 migration 必须 override `can_resume()`" | ⏳ 待修 |
+| AUDIT-MEMORY-005 | 🟢 Low | `transaction_verifier.rs:622, 711` `.expect("...exist")` 改 `Result` 链；CI 启用 `clippy::unwrap_used` 在关键 crate | ⏳ 待修 |
+| AUDIT-CRYPTO-005 | 🟢 Low | `Generator::new()` doc 明确"`ThreadRng` 是 `CryptoRng`，请勿替换为非 CSPRNG"；考虑 `R: CryptoRng + RngCore` 编译期防护 | ⏳ 文档/类型 |
+| AUDIT-LOGIC-007 | 🔵 Info | `transaction_verifier.rs:680, 717` 裸 `+` 改 `checked_add` 显式处理 | ⏳ 代码质量 |
 
 ---
 

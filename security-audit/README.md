@@ -5,7 +5,7 @@
 | 阶段 | 产出文件 | 状态 |
 |---|---|---|
 | Phase 0 — 侦察建档 | [`SECURITY_AUDIT_TODO.md`](./SECURITY_AUDIT_TODO.md) v0（含项目概况 / 数据流 / 信任边界 / 80 个 AUDIT-ID） | ✅ 完成 |
-| Phase 1 — 逐项深度审计 | [`rounds/round-01-consensus-and-funds.md`](./rounds/round-01-consensus-and-funds.md)<br>[`rounds/round-02-external-attack-surface.md`](./rounds/round-02-external-attack-surface.md)<br>[`rounds/round-03-script-host.md`](./rounds/round-03-script-host.md)<br>[`rounds/round-04-rpc-and-deps.md`](./rounds/round-04-rpc-and-deps.md)<br>[`rounds/round-05-consensus-details-and-serde.md`](./rounds/round-05-consensus-details-and-serde.md) | ✅ 5 轮 P0 完成 |
+| Phase 1 — 逐项深度审计 | [`rounds/round-01-consensus-and-funds.md`](./rounds/round-01-consensus-and-funds.md)<br>[`rounds/round-02-external-attack-surface.md`](./rounds/round-02-external-attack-surface.md)<br>[`rounds/round-03-script-host.md`](./rounds/round-03-script-host.md)<br>[`rounds/round-04-rpc-and-deps.md`](./rounds/round-04-rpc-and-deps.md)<br>[`rounds/round-05-consensus-details-and-serde.md`](./rounds/round-05-consensus-details-and-serde.md)<br>[`rounds/round-06-db-sql-errinfo.md`](./rounds/round-06-db-sql-errinfo.md)<br>[`rounds/round-07-panic-crypto-since.md`](./rounds/round-07-panic-crypto-since.md) | ✅ 5 轮 P0 + 2 轮 P1 完成 |
 | Phase 2 — TODO 文档更新 | `SECURITY_AUDIT_TODO.md` 附录 A/B/C 同步更新 | ✅ 完成 |
 | Phase 3 — 最终报告 | [`REPORT.md`](./REPORT.md) | ✅ 完成 |
 
