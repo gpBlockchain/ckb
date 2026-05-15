@@ -3,8 +3,8 @@
 > **审计对象**: gpBlockchain/ckb（Nervos CKB Layer-1 区块链节点 Rust 实现）  
 > **审计方法**: 基于 [`security-audit` SKILL](https://github.com/gpBlockchain/ckb-test-skills/blob/main/.claude/skills/security-audit/SKILL.md) 四阶段静态代码审计 + 配置审视  
 > **审计范围**: 仓库内 ~70 Cargo workspace crates / ~809 Rust 源文件  
-> **审计深度**: **全部完成 — 80/80（100%） + 15 轮深审 + 横向同源扫描** — P0 28 + P1 26 + P2 18 + P3 8  
-> **报告日期**: 2026-05-15（v3.1 — 含 Round 1-15 全部深度审计 + AUDIT-MEMORY-010 纵深防御建议）
+> **审计深度**: **全部完成 — 80/80（100%） + 16 轮深审** — P0 28 + P1 26 + P2 18 + P3 8  
+> **报告日期**: 2026-05-15（v3.2 — 含 Round 1-16 全部深度审计 + AUDIT-PANIC-001/002 新增）
 
 ---
 
@@ -27,8 +27,8 @@ CKB 节点的整体安全工程实践处于**业界优秀水平**。核心共识
 - **0 个 Critical**
 - **1 个 High**: 🟠 **AUDIT-MEMORY-009** — tx-pool `conflicts_cache` 内存放大攻击（Round 13 深挖发现，Round 15 横向核验确认为同类唯一 High）。`conflicts_cache` 以条目数（10,000）而非字节为上限，单 tx 最大 512KB，理论上限 ~4.88GB 旁路 `max_tx_pool_size = 180MB`（~27 倍放大）。默认 mainnet 配置 RBF 启用，攻击者持有 1 个 cell（~$10）即可在零链上费用下耗尽节点内存
 - **2 个 Medium**: AUDIT-CRYPTO-001（`Signature` 公共 API 多处可达 panic + `is_valid` 缺 low-S），AUDIT-ERRINFO-002（sentry 上报含 `org_contact` 等 PII，缺通用 `before_send` 过滤）
-- **8 个 Low**: AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007
-- **~23 个 Info / 设计约束 / 运维建议**（含 Round 15 新增 **AUDIT-MEMORY-010** — `pending_compact_blocks` 缺纵深防御上限，当前由 PoW 检查屏蔽）
+- **9 个 Low**: AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007 / **AUDIT-PANIC-001**（Round 16 新增 — `BlockUnclesVerifier` 缺 `return` 导致 PoW-gated 远端可触发 panic，mainnet Low / dev-chain High）
+- **~24 个 Info / 设计约束 / 运维建议**（含 Round 15 新增 **AUDIT-MEMORY-010** 与 Round 16 新增 **AUDIT-PANIC-002** 纵深防御建议）
 - **1 个需动态验证项**: AUDIT-DEPS-001（CI 持续运行 `cargo audit`）
 
 CKB 节点的整体安全工程实践处于业界优秀水平：
@@ -47,8 +47,8 @@ CKB 节点的整体安全工程实践处于业界优秀水平：
 | 🔴 Critical | 0 | — |
 | 🟠 **High** | **1** | **AUDIT-MEMORY-009 — tx-pool `conflicts_cache` 内存放大（Round 13）** |
 | 🟡 Medium | 2 | AUDIT-CRYPTO-001 / AUDIT-ERRINFO-002 |
-| 🟢 Low | 8 | AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007 |
-| 🔵 Info / 设计约束 | ~23 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-MEMORY-006 / **AUDIT-MEMORY-010**（Round 15 新增） / AUDIT-DEPS-002/003/005 / AUDIT-AUTH-001/003/004 / AUDIT-DB-001 / AUDIT-LOGIC-007/008 / AUDIT-CRYPTO-006 / AUDIT-ERRINFO-001/003/004 / AUDIT-NET-005 / AUDIT-SPEC-001~005 等 |
+| 🟢 Low | 9 | AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007 / **AUDIT-PANIC-001**（Round 16） |
+| 🔵 Info / 设计约束 | ~24 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-MEMORY-006 / **AUDIT-MEMORY-010**（Round 15） / **AUDIT-PANIC-002**（Round 16） / AUDIT-DEPS-002/003/005 / AUDIT-AUTH-001/003/004 / AUDIT-DB-001 / AUDIT-LOGIC-007/008 / AUDIT-CRYPTO-006 / AUDIT-ERRINFO-001/003/004 / AUDIT-NET-005 / AUDIT-SPEC-001~005 等 |
 | ⚠️ 需动态验证 | 1 | AUDIT-DEPS-001（cargo audit CI 集成） |
 | ✅ 通过 | ~50 | 其余 P0/P1/P2/P3 已审项 |
 
