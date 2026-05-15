@@ -273,6 +273,11 @@ let withdraw_capacity =
 - [`rounds/round-09-deps-db-memory-serde.md`](rounds/round-09-deps-db-memory-serde.md) — AUDIT-DEPS-003/004/005 + AUDIT-DB-003 + AUDIT-MEMORY-006/007 + AUDIT-SERDE-003/004/005
 - [`rounds/round-10-scriptgroup-fuzz-fee-errinfo.md`](rounds/round-10-scriptgroup-fuzz-fee-errinfo.md) — AUDIT-CONTRACT-005/006 + AUDIT-LOGIC-009 + AUDIT-ERRINFO-003/004
 - [`rounds/round-11-dim-spec-rfc.md`](rounds/round-11-dim-spec-rfc.md) — AUDIT-SPEC-001~005（RFC-0017/0019/0020/0022/0023/0032/0035/0042 映射）
+- [`rounds/round-12-cross-module-cases.md`](rounds/round-12-cross-module-cases.md) — **跨模块用例** XM-001~014 + 6 个新增 AUDIT-XM-* 项
+
+### 附录 A2 — 模块视角报告
+
+- [`MODULE_REPORT.md`](MODULE_REPORT.md) — 按 workspace crate 分组（M1~M11）的审计完成度与跨模块责任矩阵
 
 ### 附录 B — SSoT 文档
 

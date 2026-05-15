@@ -461,3 +461,42 @@
 3. 对外部输入与回调假设最坏情况
 4. 本文档为 SSoT，跨会话延续，状态变化必更新附录 A/B/C
 5. CKB-VM 合约审计豁免内存对齐；本仓库是宿主 Rust 代码亦无须审计对齐
+
+---
+
+## 附录 D — 跨模块审计用例（Round 12 补充）
+
+> 沿端到端业务流跨越 ≥2 个模块的审计用例。完整记录见 [`rounds/round-12-cross-module-cases.md`](rounds/round-12-cross-module-cases.md)。
+> 模块视角的归档见 [`MODULE_REPORT.md`](MODULE_REPORT.md)。
+
+| 用例 ID | 业务流 | 跨越模块 | 新增 AUDIT-ID |
+|---|---|---|---|
+| XM-001 | 接收并验证新区块 | sync/chain/verification/script/store | — |
+| XM-002 | 用户提交一笔交易 | rpc/tx-pool/script/sync | 联动 INPUT-001 |
+| XM-003 | reorg 期间 mempool 重组 | chain/tx-pool/script | 联动 LOGIC-008 |
+| XM-004 | Hardfork 激活时刻 | chain/script/consensus | **AUDIT-XM-002** |
+| XM-005 | DAO 提款交易 | verification/util/dao/script | 联动 LOGIC-003 |
+| XM-006 | 节点崩溃恢复 | chain/store/freezer/launcher | **AUDIT-XM-003** |
+| XM-007 | RPC subscription 广播 | rpc/notify/chain/tx-pool | **AUDIT-XM-004** |
+| XM-008 | 迁移期间启动 | db-migration/launcher/rpc | 联动 DB-001 |
+| XM-009 | 网络告警传播 | sync/network-alert/rpc | 联动 CRYPTO-001 + AUTH-002 |
+| XM-010 | 轻客户端协议 | LC-server/block-filter/store | **AUDIT-XM-005** |
+| XM-011 | Indexer 异步索引 | indexer-sync/chain/store | 联动 MEMORY-007 |
+| XM-012 | Miner 模板提交 | rpc/chain/tx-pool/miner | — |
+| XM-013 | P2P 接入到首消息 | network/tentacle-secio/sync | 联动 NET-001/005 |
+| XM-014 | freeze ↔ reorg 冲突 | chain/freezer | **AUDIT-XM-001** (P1 Low) |
+
+### 新增 AUDIT-XM-* 项（追加到下一轮修复 backlog）
+
+- [ ] 🟠 **AUDIT-XM-001**: 在 `chain::ChainService` 添加 reorg fork_point > freezer.number 显式检查
+  - **位置**: `chain/src/chain_service.rs` reorg 决策路径
+  - **严重**: 🟢 Low (待动态验证：是否已隐式由共识规则阻挡？)
+- [ ] 🟡 **AUDIT-XM-002**: `tx-pool` / `chain` 在 epoch boundary 主动触发 rerun_scripts
+- [ ] 🟡 **AUDIT-XM-003**: `launcher` 加 `/health` endpoint 报告启动进度
+- [ ] 🟡 **AUDIT-XM-004**: `notify::NotifyController` 在 channel 满时显式 try_send + WARN
+- [ ] 🟡 **AUDIT-XM-005**: `util/light-client-protocol-server` 加 per-peer rate limit
+- [ ] 🟢 **AUDIT-XM-006**: chain `process_block` 增加验证时长日志（运维监控）
+
+### 模块责任矩阵速查
+
+详见 [`MODULE_REPORT.md`](MODULE_REPORT.md) 第「跨模块责任矩阵」节，列出 6 个跨模块发现的主责/协责团队。

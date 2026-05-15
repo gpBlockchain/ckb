@@ -5,16 +5,18 @@
 | 阶段 | 产出文件 | 状态 |
 |---|---|---|
 | Phase 0 — 侦察建档 | [`SECURITY_AUDIT_TODO.md`](./SECURITY_AUDIT_TODO.md) v3（含项目概况 / 数据流 / 信任边界 / 80 个 AUDIT-ID 全部完成） | ✅ 完成 |
-| Phase 1 — 逐项深度审计 | [`rounds/round-01-consensus-and-funds.md`](./rounds/round-01-consensus-and-funds.md)<br>[`rounds/round-02-external-attack-surface.md`](./rounds/round-02-external-attack-surface.md)<br>[`rounds/round-03-script-host.md`](./rounds/round-03-script-host.md)<br>[`rounds/round-04-rpc-and-deps.md`](./rounds/round-04-rpc-and-deps.md)<br>[`rounds/round-05-consensus-details-and-serde.md`](./rounds/round-05-consensus-details-and-serde.md)<br>[`rounds/round-06-db-sql-errinfo.md`](./rounds/round-06-db-sql-errinfo.md)<br>[`rounds/round-07-panic-crypto-since.md`](./rounds/round-07-panic-crypto-since.md)<br>[`rounds/round-08-network-auth-dns.md`](./rounds/round-08-network-auth-dns.md)<br>[`rounds/round-09-deps-db-memory-serde.md`](./rounds/round-09-deps-db-memory-serde.md)<br>[`rounds/round-10-scriptgroup-fuzz-fee-errinfo.md`](./rounds/round-10-scriptgroup-fuzz-fee-errinfo.md)<br>[`rounds/round-11-dim-spec-rfc.md`](./rounds/round-11-dim-spec-rfc.md) | ✅ **11 轮全部完成 (80/80 = 100%)** |
-| Phase 2 — TODO 文档更新 | `SECURITY_AUDIT_TODO.md` 附录 A/B/C 同步更新 | ✅ 完成 |
-| Phase 3 — 最终报告 | [`REPORT.md`](./REPORT.md) | ✅ 完成 |
+| Phase 1 — 逐项深度审计 | [`rounds/round-01-consensus-and-funds.md`](./rounds/round-01-consensus-and-funds.md)<br>[`rounds/round-02-external-attack-surface.md`](./rounds/round-02-external-attack-surface.md)<br>[`rounds/round-03-script-host.md`](./rounds/round-03-script-host.md)<br>[`rounds/round-04-rpc-and-deps.md`](./rounds/round-04-rpc-and-deps.md)<br>[`rounds/round-05-consensus-details-and-serde.md`](./rounds/round-05-consensus-details-and-serde.md)<br>[`rounds/round-06-db-sql-errinfo.md`](./rounds/round-06-db-sql-errinfo.md)<br>[`rounds/round-07-panic-crypto-since.md`](./rounds/round-07-panic-crypto-since.md)<br>[`rounds/round-08-network-auth-dns.md`](./rounds/round-08-network-auth-dns.md)<br>[`rounds/round-09-deps-db-memory-serde.md`](./rounds/round-09-deps-db-memory-serde.md)<br>[`rounds/round-10-scriptgroup-fuzz-fee-errinfo.md`](./rounds/round-10-scriptgroup-fuzz-fee-errinfo.md)<br>[`rounds/round-11-dim-spec-rfc.md`](./rounds/round-11-dim-spec-rfc.md)<br>[`rounds/round-12-cross-module-cases.md`](./rounds/round-12-cross-module-cases.md) — **跨模块用例** | ✅ **12 轮完成 (80/80 + 6 跨模块项)** |
+| Phase 2 — TODO 文档更新 | `SECURITY_AUDIT_TODO.md` 附录 A/B/C/D 同步更新 | ✅ 完成 |
+| Phase 3 — 最终报告 | [`REPORT.md`](./REPORT.md)（维度视角）+ [`MODULE_REPORT.md`](./MODULE_REPORT.md)（模块视角） | ✅ 完成 |
 
 ## 阅读顺序
 
 1. 先看 `SECURITY_AUDIT_TODO.md` 顶部"项目概况 / 审计进度"快览
-2. 浏览 `REPORT.md` 第 1~3 节获取关键发现的执行摘要
-3. 需要详细分析时，根据 `REPORT.md` 中的 AUDIT-ID 跳转到对应的 `rounds/round-NN-*.md`
-4. **审计已 100% 完成**，所有 80 个 AUDIT-ID 均已闭环
+2. 浏览 `REPORT.md` 第 1~3 节获取**按维度**的关键发现的执行摘要
+3. 浏览 `MODULE_REPORT.md` 获取**按模块/crate**的审计完成度与责任矩阵
+4. 需要详细分析时，根据 `REPORT.md` / `MODULE_REPORT.md` 中的 AUDIT-ID 跳转到对应的 `rounds/round-NN-*.md`
+5. 关注**跨模块路径**时阅读 `rounds/round-12-cross-module-cases.md`（14 个端到端用例）
+6. **审计已 100% 完成**，所有 80 个 AUDIT-ID + 6 个跨模块 AUDIT-XM 项均已闭环
 
 ## 重要说明
 
