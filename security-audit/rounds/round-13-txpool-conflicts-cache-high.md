@@ -2,8 +2,8 @@
 
 > 日期: 2026-05-15  
 > 范围: 在 12 轮按维度/模块/跨模块审计均未发现 High 后，沿 RBF 与拒绝路径深入挖掘  
-> 结论: **发现首个 High 级别问题** — `AUDIT-MEMORY-009`
-> **状态: 已修复** — 见同 PR 中 `tx-pool/src/pool.rs` 的 `MAX_CONFLICTS_CACHE_BYTES` 字节预算（10 MiB）。`record_conflict` / `remove_conflict` / `clear` 现按 `tx.data().total_size()` 维护 `conflicts_cache_total_size`，超出预算时按 LRU 淘汰；条目数上限 `CONFLICTES_CACHE_SIZE = 10_000` 保留为纵深防御。理论最大内存占用从 ~4.88 GB 降至 ≤ 10 MiB + 单笔 tx，相对 `max_tx_pool_size = 180 MB` 不再放大。
+> 结论: **发现首个 High 级别问题** — `AUDIT-MEMORY-009`  
+> 状态: **待修复（审计阶段不改动代码）**；修复方向见本文档末尾"建议修复"小节，留给开发团队实施。
 
 ---
 

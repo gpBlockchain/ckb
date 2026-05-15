@@ -32,14 +32,6 @@ const CONFLICTES_CACHE_SIZE: usize = 10_000;
 const CONFLICTES_INPUTS_CACHE_SIZE: usize = 30_000;
 const MAX_REPLACEMENT_CANDIDATES: usize = 100;
 
-// Byte-budget cap for `conflicts_cache` to prevent memory amplification via
-// attacker-controlled rejected transactions (e.g. RBF / dead-cell conflicts).
-// The entry-count cap (`CONFLICTES_CACHE_SIZE`) alone allows up to
-// `CONFLICTES_CACHE_SIZE * TRANSACTION_SIZE_LIMIT` bytes (~4.88 GB) and bypasses
-// `max_tx_pool_size` accounting. 10 MiB is well above legitimate RBF working-set
-// sizes and far below the default `max_tx_pool_size` (180 MB).
-const MAX_CONFLICTS_CACHE_BYTES: usize = 10 * 1024 * 1024;
-
 /// Tx-pool implementation
 pub struct TxPool {
     pub(crate) config: TxPoolConfig,
@@ -56,9 +48,6 @@ pub struct TxPool {
     pub(crate) conflicts_cache: lru::LruCache<ProposalShortId, TransactionView>,
     // conflicted transaction outputs cache, input -> tx_short_id
     pub(crate) conflicts_outputs_cache: lru::LruCache<OutPoint, ProposalShortId>,
-    // running byte-size of `conflicts_cache` payloads (sum of `tx.data().total_size()`),
-    // used to enforce `MAX_CONFLICTS_CACHE_BYTES`.
-    pub(crate) conflicts_cache_total_size: usize,
 }
 
 impl TxPool {
@@ -75,7 +64,6 @@ impl TxPool {
             expiry,
             conflicts_cache: LruCache::new(CONFLICTES_CACHE_SIZE),
             conflicts_outputs_cache: lru::LruCache::new(CONFLICTES_INPUTS_CACHE_SIZE),
-            conflicts_cache_total_size: 0,
         }
     }
 
@@ -175,64 +163,27 @@ impl TxPool {
 
     pub(crate) fn record_conflict(&mut self, tx: TransactionView) {
         let short_id = tx.proposal_short_id();
-        let tx_size = tx.data().total_size();
         for inputs in tx.input_pts_iter() {
             self.conflicts_outputs_cache.put(inputs, short_id.clone());
         }
-        // Account for the newly inserted tx and subtract the displaced entry's
-        // size if `put` overwrites an existing key, so the running counter stays
-        // consistent.
-        if let Some(displaced) = self.conflicts_cache.put(short_id.clone(), tx) {
-            let displaced_size = displaced.data().total_size();
-            self.conflicts_cache_total_size = self
-                .conflicts_cache_total_size
-                .saturating_sub(displaced_size);
-            for inputs in displaced.input_pts_iter() {
-                self.conflicts_outputs_cache.pop(&inputs);
-            }
-        }
-        self.conflicts_cache_total_size = self.conflicts_cache_total_size.saturating_add(tx_size);
-        // Enforce byte budget by evicting the least-recently-used entries until
-        // the running total is within `MAX_CONFLICTS_CACHE_BYTES`. We always
-        // keep at least the just-inserted entry to make progress, regardless of
-        // its size relative to the budget.
-        while self.conflicts_cache_total_size > MAX_CONFLICTS_CACHE_BYTES
-            && self.conflicts_cache.len() > 1
-        {
-            if let Some((_evicted_id, evicted_tx)) = self.conflicts_cache.pop_lru() {
-                let evicted_size = evicted_tx.data().total_size();
-                self.conflicts_cache_total_size = self
-                    .conflicts_cache_total_size
-                    .saturating_sub(evicted_size);
-                for inputs in evicted_tx.input_pts_iter() {
-                    self.conflicts_outputs_cache.pop(&inputs);
-                }
-            } else {
-                break;
-            }
-        }
+        self.conflicts_cache.put(short_id.clone(), tx);
         debug!(
-            "record_conflict {:?} now cache size: {} bytes: {}",
+            "record_conflict {:?} now cache size: {}",
             short_id,
-            self.conflicts_cache.len(),
-            self.conflicts_cache_total_size,
+            self.conflicts_cache.len()
         );
     }
 
     pub(crate) fn remove_conflict(&mut self, short_id: &ProposalShortId) {
         if let Some(tx) = self.conflicts_cache.pop(short_id) {
-            let tx_size = tx.data().total_size();
-            self.conflicts_cache_total_size =
-                self.conflicts_cache_total_size.saturating_sub(tx_size);
             for inputs in tx.input_pts_iter() {
                 self.conflicts_outputs_cache.pop(&inputs);
             }
         }
         debug!(
-            "remove_conflict {:?} now cache size: {} bytes: {}",
+            "remove_conflict {:?} now cache size: {}",
             short_id,
-            self.conflicts_cache.len(),
-            self.conflicts_cache_total_size,
+            self.conflicts_cache.len()
         );
     }
 
@@ -568,7 +519,6 @@ impl TxPool {
         self.committed_txs_hash_cache = LruCache::new(COMMITTED_HASH_CACHE_SIZE);
         self.conflicts_cache = LruCache::new(CONFLICTES_CACHE_SIZE);
         self.conflicts_outputs_cache = lru::LruCache::new(CONFLICTES_INPUTS_CACHE_SIZE);
-        self.conflicts_cache_total_size = 0;
     }
 
     pub(crate) fn package_proposals(
