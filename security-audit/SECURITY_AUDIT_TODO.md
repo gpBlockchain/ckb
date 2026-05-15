@@ -1,6 +1,6 @@
 # Nervos CKB 安全审计 TODO
 
-> 版本: **v2** | 最后更新: 2026-05-15 | 状态: P0 全部完成 (28) + P1 部分完成 (11) / 剩余 P1+P2+P3 待续
+> 版本: **v3** | 最后更新: 2026-05-15 | 状态: **全部 80 项审计完成** (P0 28 + P1 26 + P2 18 + P3 8)
 
 ---
 
@@ -63,13 +63,12 @@
 
 ## 三、审计进度
 
-- **总 TODO 项**: 80
-- **🔴 P0 项**: 28（✅ 已完成 28，❌ 发现 Medium/Low/Info 共 14）
-- **🟠 P1 项**: 26（✅ 已完成 11，⏳ 剩余 15）
-  - Round 6: AUDIT-DB-001 / AUDIT-DB-002 / AUDIT-ERRINFO-002 / AUDIT-INPUT-005 / AUDIT-INPUT-007
-  - Round 7: AUDIT-MEMORY-005 / AUDIT-CRYPTO-004 / AUDIT-CRYPTO-005 / AUDIT-CRYPTO-006 / AUDIT-LOGIC-007 / AUDIT-LOGIC-008
-- **🟡 P2 项**: 18（⏳ 待审计）
-- **🟢 P3 项**: 8（⏳ 待审计）
+- **总 TODO 项**: 80（✅ **全部完成**）
+- **🔴 P0 项**: 28（✅ 全部完成；Round 1-5）
+- **🟠 P1 项**: 26（✅ 全部完成；Round 6-11）
+- **🟡 P2 项**: 18（✅ 全部完成；Round 8-11）
+- **🟢 P3 项**: 8（✅ 全部完成；Round 8-11）
+- **发现汇总**: 0 Critical / 0 High / **2 Medium** / **8 Low** / ~20 Info / 1 待动态验证
 
 状态标记: `[ ]` 待审 / `[~]` 审计中 / `[x]` 通过 / `[!]` 发现问题
 
@@ -109,7 +108,8 @@
 - [x] 🟠 **AUDIT-INPUT-005**: `util/jsonrpc-types` 反序列化健壮性
   - **关联代码**: `util/jsonrpc-types/src/{bytes,fixed_bytes,proposal_short_id,alert,uints}.rs`
   - **审计内容**: 畸形 hex / 截断 / 非 0x 前缀 / 大数字符串
-- [ ] 🟠 **AUDIT-INPUT-006**: `util/onion`、`hickory-resolver` DNS / .onion 解析容错
+- [x] 🟠 **AUDIT-INPUT-006**: `util/onion`、`hickory-resolver` DNS / .onion 解析容错
+  - **发现记录**: 见 `rounds/round-08-network-auth-dns.md#audit-input-006`
 - [x] 🟠 **AUDIT-INPUT-007**: `util/app-config` TOML 解析对未知/越界字段
   - **审计内容**: `Config` 均带 `#[serde(deny_unknown_fields)]`（`rpc.rs:25`），✅ 部分预审通过
 
@@ -125,9 +125,9 @@
   - **关联代码**: `block-filter/src/lib.rs`、依赖 `golomb-coded-set=0.2.0`
   - **发现记录**: 见 `rounds/round-05-consensus-details-and-serde.md#audit-serde-002`
 
-- [ ] 🟠 **AUDIT-SERDE-003**: `db-migration` 旧版本数据兼容性
-- [ ] 🟠 **AUDIT-SERDE-004**: `core ↔ packed ↔ jsonrpc` 三层 roundtrip 一致性
-- [ ] 🟢 **AUDIT-SERDE-005**: `snap` 压缩 zip-bomb 风险（用于 `network` payload 压缩）
+- [x] 🟠 **AUDIT-SERDE-003**: `db-migration` 旧版本数据兼容性 — 见 `rounds/round-09-deps-db-memory-serde.md#audit-serde-003`
+- [x] 🟠 **AUDIT-SERDE-004**: `core ↔ packed ↔ jsonrpc` 三层 roundtrip 一致性 — 见 `rounds/round-09`
+- [x] 🟢 **AUDIT-SERDE-005**: `snap` 压缩 zip-bomb 风险 — 见 `rounds/round-09`
   - **关联代码**: `network/src/compress.rs`
 
 ---
@@ -212,7 +212,7 @@
 - [x] 🟠 **AUDIT-LOGIC-007**: cellbase 成熟期 / since 字段所有分支
   - **关联代码**: `verification/src/transaction_verifier.rs:364-413, 596-754`
 - [x] 🟠 **AUDIT-LOGIC-008**: TOCTOU — tx-pool 在 reorg 期间的 RBF
-- [ ] 🟠 **AUDIT-LOGIC-009**: `util/fee-estimator` 异常输入
+- [x] 🟠 **AUDIT-LOGIC-009**: `util/fee-estimator` 异常输入 — 见 `rounds/round-10-scriptgroup-fuzz-fee-errinfo.md#audit-logic-009`
 
 ---
 
@@ -246,9 +246,10 @@
   - **关联代码**: `Cargo.toml:215`、`Cargo.lock`
   - **发现记录**: 钉版 + 上游已发布 0.24.x 后续小版本，需周期性核对。见 `rounds/round-03`
 
-- [ ] 🟠 **AUDIT-CONTRACT-005**: `ScriptGroup` 分组与去重
-  - **关联代码**: `script/src/types.rs` `ScriptGroup` / `verify::verify` 内迭代
-- [ ] 🟠 **AUDIT-CONTRACT-006**: 扩展 `script/fuzz` syscall fuzzing
+- [x] 🟠 **AUDIT-CONTRACT-005**: `ScriptGroup` 分组与去重
+  - **关联代码**: `script/src/types.rs:132-188, 716-740` `ScriptGroup` / `TxData::new`
+  - **发现记录**: 见 `rounds/round-10-scriptgroup-fuzz-fee-errinfo.md#audit-contract-005`
+- [x] 🟠 **AUDIT-CONTRACT-006**: 扩展 `script/fuzz` syscall fuzzing — 见 `rounds/round-10`
 
 ---
 
@@ -285,8 +286,8 @@
   - **发现记录**: 见 `rounds/round-02-external-attack-surface.md#audit-memory-004`
 
 - [x] 🟠 **AUDIT-MEMORY-005**: 可由外部触发的 panic 路径（`unwrap`/`expect`/`assert!`）
-- [ ] 🟠 **AUDIT-MEMORY-006**: rocksdb 写放大 / freezer 错误处理
-- [ ] 🟠 **AUDIT-MEMORY-007**: `util/rich-indexer` 大查询超时
+- [!] 🟠 **AUDIT-MEMORY-006**: rocksdb 写放大 / freezer 错误处理 — 见 `rounds/round-09-deps-db-memory-serde.md#audit-memory-006`
+- [!] 🟠 **AUDIT-MEMORY-007**: `util/rich-indexer` 大查询超时 — 见 `rounds/round-09`
 
 ---
 
@@ -299,10 +300,11 @@
     - `util/app-config/src/tests/app_config.rs`（默认 `listen_address = "127.0.0.1:7000"`）
   - **发现记录**: 默认配置安全 ✅。见 `rounds/round-04-rpc-and-deps.md#audit-auth-001`
 
-- [ ] 🟠 **AUDIT-AUTH-002**: Alert 协议签名者列表与阈值
-  - **关联代码**: `util/network-alert/src/`、`spec/` 中 `alert_signature_threshold`
-- [ ] 🟠 **AUDIT-AUTH-003**: RPC 监听文档警告完整性
-- [ ] 🟢 **AUDIT-AUTH-004**: 密钥/secret 文件权限校验
+- [!] 🟠 **AUDIT-AUTH-002**: Alert 协议签名者列表与阈值
+  - **关联代码**: `util/network-alert/src/verifier.rs:22-64`、`util/app-config/src/configs/network_alert.rs`、`util/app-config/src/configs/alert_signature.toml`
+  - **发现记录**: 见 `rounds/round-08-network-auth-dns.md#audit-auth-002`
+- [x] 🟠 **AUDIT-AUTH-003**: RPC 监听文档警告完整性 — 见 `rounds/round-08`
+- [x] 🟢 **AUDIT-AUTH-004**: 密钥/secret 文件权限校验 — 见 `rounds/round-08`
 
 ---
 
@@ -316,9 +318,9 @@
   - **关联代码**: `Cargo.toml:215` `ckb-vm = "=0.24.14"`、`Cargo.toml:285` `rocksdb = "=0.21.1"`、`Cargo.toml:216` `clap = "=4.4"`、`Cargo.toml:288` `secp256k1 = "0.30"`
   - **发现记录**: 见 `rounds/round-04`
 
-- [ ] 🟠 **AUDIT-DEPS-003**: `deny.toml` 策略复核
-- [ ] 🟠 **AUDIT-DEPS-004**: `rhai`、`sqlx`、`reqwest`、`hyper-tls` 可选 feature
-- [ ] 🟢 **AUDIT-DEPS-005**: 供应链（git 依赖 / 非 crates.io 源）
+- [x] 🟠 **AUDIT-DEPS-003**: `deny.toml` 策略复核 — 见 `rounds/round-09-deps-db-memory-serde.md#audit-deps-003`
+- [x] 🟠 **AUDIT-DEPS-004**: `rhai`、`sqlx`、`reqwest`、`hyper-tls` 可选 feature — 见 `rounds/round-09`
+- [x] 🟢 **AUDIT-DEPS-005**: 供应链（git 依赖 / 非 crates.io 源） — 见 `rounds/round-09`
 
 ---
 
@@ -330,18 +332,18 @@
 
 - [x] 🟠 **AUDIT-ERRINFO-002**: `sentry` 上报内容
   - **关联代码**: `util/app-config/src/sentry_config.rs:13`、`ckb-bin/src/setup_app.rs`、根 README 第 24 行"will send stack trace to sentry on Rust panics"
-- [ ] 🟠 **AUDIT-ERRINFO-003**: 脚本验证错误 oracle
-- [ ] 🟠 **AUDIT-ERRINFO-004**: 被静默忽略的 `Result`
+- [x] 🟠 **AUDIT-ERRINFO-003**: 脚本验证错误 oracle — 见 `rounds/round-10-scriptgroup-fuzz-fee-errinfo.md#audit-errinfo-003`
+- [x] 🟠 **AUDIT-ERRINFO-004**: 被静默忽略的 `Result` — 见 `rounds/round-10`
 
 ---
 
 ## 第 10 章 DIM-SPEC — RFC 一致性
 
-- [ ] 🔴 **AUDIT-SPEC-001**: RFC-0017 Transaction Valid Conditions 逐条映射
-- [ ] 🔴 **AUDIT-SPEC-002**: RFC-0019/0020/0022 共识与延迟提交规则
-- [ ] 🔴 **AUDIT-SPEC-003**: RFC-0023 NervosDAO 参数与时间锁
-- [ ] 🟠 **AUDIT-SPEC-004**: RFC-0032/0035 Hardfork 激活逻辑
-- [ ] 🟠 **AUDIT-SPEC-005**: RFC-0042 多 VM 版本切换边界
+- [x] 🔴 **AUDIT-SPEC-001**: RFC-0017 Transaction Valid Conditions 逐条映射 — 见 `rounds/round-11-dim-spec-rfc.md#audit-spec-001`
+- [x] 🔴 **AUDIT-SPEC-002**: RFC-0019/0020/0022 共识与延迟提交规则 — 见 `rounds/round-11`
+- [!] 🔴 **AUDIT-SPEC-003**: RFC-0023 NervosDAO 参数与时间锁 — 见 `rounds/round-11`（联动 AUDIT-LOGIC-003）
+- [x] 🟠 **AUDIT-SPEC-004**: RFC-0032/0035 Hardfork 激活逻辑 — 见 `rounds/round-11`
+- [x] 🟠 **AUDIT-SPEC-005**: RFC-0042 多 VM 版本切换边界 — 见 `rounds/round-11`
 
 ---
 
@@ -358,10 +360,11 @@
     - `sync/src/net_time_checker.rs:148`
   - **发现记录**: 见 `rounds/round-02`
 
-- [ ] 🟠 **AUDIT-NET-003**: CompactBlock short-id 冲突
-  - **关联代码**: `sync/src/relayer/compact_block_process.rs`、`compact_block_verifier.rs`
-- [ ] 🟠 **AUDIT-NET-004**: DNS-seed 引导劫持
-- [ ] 🟠 **AUDIT-NET-005**: Tor/onion 去匿名 fingerprint
+- [x] 🟠 **AUDIT-NET-003**: CompactBlock short-id 冲突
+  - **关联代码**: `sync/src/relayer/compact_block_verifier.rs`
+  - **发现记录**: 见 `rounds/round-08-network-auth-dns.md#audit-net-003`
+- [x] 🟠 **AUDIT-NET-004**: DNS-seed 引导劫持 — 见 `rounds/round-08`
+- [x] 🟠 **AUDIT-NET-005**: Tor/onion 去匿名 fingerprint — 见 `rounds/round-08`
 
 ---
 
@@ -371,7 +374,7 @@
   - **关联代码**: `db-migration/src/lib.rs`、`util/migrate/src/`、`util/migrate/migration-template`
 - [x] 🟠 **AUDIT-DB-002**: `rich-indexer` SQL 注入
   - **关联代码**: `util/rich-indexer/src/` + `sqlx`/`sql-builder`
-- [ ] 🟠 **AUDIT-DB-003**: `freezer` 冷热切换一致性
+- [!] 🟠 **AUDIT-DB-003**: `freezer` 冷热切换一致性 — 见 `rounds/round-09-deps-db-memory-serde.md#audit-db-003`
 
 ---
 
