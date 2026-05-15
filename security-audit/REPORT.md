@@ -335,6 +335,7 @@ let withdraw_capacity =
 - [`rounds/round-11-dim-spec-rfc.md`](rounds/round-11-dim-spec-rfc.md) — AUDIT-SPEC-001~005（RFC-0017/0019/0020/0022/0023/0032/0035/0042 映射）
 - [`rounds/round-12-cross-module-cases.md`](rounds/round-12-cross-module-cases.md) — **跨模块用例** XM-001~014 + 6 个新增 AUDIT-XM-* 项
 - [`rounds/round-13-txpool-conflicts-cache-high.md`](rounds/round-13-txpool-conflicts-cache-high.md) — 🟠 **首个 HIGH 级别发现** AUDIT-MEMORY-009（tx-pool conflicts_cache 内存放大 ~27×）
+- [`rounds/round-14-candidate-verification.md`](rounds/round-14-candidate-verification.md) — High 复盘与 7 个新候选核验；全部降级；MEMORY-009 仍是唯一 High
 
 ### 附录 A2 — 模块视角报告
 
