@@ -24,10 +24,11 @@ CKB 节点的整体安全工程实践处于**业界优秀水平**。核心共识
 
 完整审计共发现：
 
-- **0 个 Critical / 0 个 High**: 无任何会直接导致资金被盗、双花、共识分裂、节点 RCE 的现实可达漏洞
+- **0 个 Critical**
+- **1 个 High**: 🟠 **AUDIT-MEMORY-009** — tx-pool `conflicts_cache` 内存放大攻击（Round 13 深挖发现）。`conflicts_cache` 以条目数（10,000）而非字节为上限，单 tx 最大 512KB，理论上限 ~4.88GB 旁路 `max_tx_pool_size = 180MB`（~27 倍放大）。默认 mainnet 配置 RBF 启用，攻击者持有 1 个 cell（~$10）即可在零链上费用下耗尽节点内存
 - **2 个 Medium**: AUDIT-CRYPTO-001（`Signature` 公共 API 多处可达 panic + `is_valid` 缺 low-S），AUDIT-ERRINFO-002（sentry 上报含 `org_contact` 等 PII，缺通用 `before_send` 过滤）
 - **8 个 Low**: AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007
-- **~20 个 Info / 设计约束 / 运维建议**
+- **~22 个 Info / 设计约束 / 运维建议**
 - **1 个需动态验证项**: AUDIT-DEPS-001（CI 持续运行 `cargo audit`）
 
 CKB 节点的整体安全工程实践处于业界优秀水平：
@@ -44,16 +45,75 @@ CKB 节点的整体安全工程实践处于业界优秀水平：
 | 严重级 | 数量 | AUDIT-ID 列表 |
 |---|---|---|
 | 🔴 Critical | 0 | — |
-| 🟠 High | 0 | — |
+| 🟠 **High** | **1** | **AUDIT-MEMORY-009 — tx-pool `conflicts_cache` 内存放大（Round 13）** |
 | 🟡 Medium | 2 | AUDIT-CRYPTO-001 / AUDIT-ERRINFO-002 |
 | 🟢 Low | 8 | AUDIT-LOGIC-003 / AUDIT-CONTRACT-001 / AUDIT-INPUT-001 / AUDIT-MEMORY-005 / AUDIT-CRYPTO-005 / AUDIT-AUTH-002 / AUDIT-DB-003 / AUDIT-MEMORY-007 |
-| 🔵 Info / 设计约束 | ~20 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-MEMORY-006 / AUDIT-DEPS-002/003/005 / AUDIT-AUTH-001/003/004 / AUDIT-DB-001 / AUDIT-LOGIC-007/008 / AUDIT-CRYPTO-006 / AUDIT-ERRINFO-001/003/004 / AUDIT-NET-005 / AUDIT-SPEC-001~005 等 |
+| 🔵 Info / 设计约束 | ~22 | AUDIT-LOGIC-006 / AUDIT-CONTRACT-004 / AUDIT-NET-001 / AUDIT-MEMORY-002 / AUDIT-MEMORY-006 / AUDIT-DEPS-002/003/005 / AUDIT-AUTH-001/003/004 / AUDIT-DB-001 / AUDIT-LOGIC-007/008 / AUDIT-CRYPTO-006 / AUDIT-ERRINFO-001/003/004 / AUDIT-NET-005 / AUDIT-SPEC-001~005 等 |
 | ⚠️ 需动态验证 | 1 | AUDIT-DEPS-001（cargo audit CI 集成） |
 | ✅ 通过 | ~50 | 其余 P0/P1/P2/P3 已审项 |
 
 ---
 
 ## 3. 关键发现详情
+
+### 3.0 🟠 **High** — tx-pool `conflicts_cache` 内存放大攻击（AUDIT-MEMORY-009 — Round 13）
+
+**文件**:
+- `tx-pool/src/pool.rs:31` — `const CONFLICTES_CACHE_SIZE: usize = 10_000;`
+- `tx-pool/src/pool.rs:48` — `conflicts_cache: lru::LruCache<ProposalShortId, TransactionView>`
+- `tx-pool/src/pool.rs:164-188` — `record_conflict` / `remove_conflict`
+- `tx-pool/src/process.rs:225-232` — RBF 路径插入旧 tx
+- `tx-pool/src/process.rs:448-456` — `after_process` 兜底插入**攻击者**的被拒绝 tx
+- `util/types/src/core/tx_pool.rs:309` — `TRANSACTION_SIZE_LIMIT = 512 * 1_000`
+- `resource/ckb.toml:213-214` — 默认 `min_rbf_rate=1500 > min_fee_rate=1000`，**RBF 默认启用**
+
+**问题**:
+
+`conflicts_cache` 用 LRU **条目数 10,000** 而非字节预算限制；每条目存完整 `TransactionView`（最大 512 KB）。`process.rs:454` 在 `Reject::RBFRejected | Resolve(OutPointError::Dead)` 且 `find_conflict_outpoint.is_some()` 时调用 `record_conflict(tx)`——**攻击者未付费的被拒绝 tx 也会入缓存**。
+
+理论内存上限：**10,000 × 512KB ≈ 4.88 GB**，完全旁路 `max_tx_pool_size = 180MB`（**~27× 放大**）。
+
+**攻击场景（代码路径已核验）**:
+
+1. 攻击者拥有 1 个 live cell X（~61 CKB ≈ $10）
+2. 提交 tx A 花费 X，正常费率 → 入池
+3. 提交 tx B₁ 花费 X，~512KB（output_data 灌水），费率略高 → RBF 替换 → A 入 cache（`process.rs:229`）
+4. 提交 tx B₂..B₁₀₀₀₀ 各 ~512KB，费率刚低于 B₁
+   - 通过 `non_contextual_verify` ✓（≤512KB）
+   - 通过 `check_tx_fee` ✓
+   - 通过签名验证 ✓（攻击者持 X 的密钥）
+   - `resolve_tx(false)` → `Dead(X)`；`resolve_tx(true)` 成功；`find_conflict_outpoint = Some(B₁)`
+   - submit_entry RBF 校验失败 → `RBFRejected`
+   - **`after_process` 命中 line 453 → record_conflict(Bᵢ) → 入 cache**
+5. 攻击者**未付任何链上费**（rejected txs 不上链），但每个 Bᵢ 占用 ~512KB 内存
+6. LRU 满后稳态保持 10,000 条恶意条目
+
+**攻击成本**:
+| 资源 | 数量 |
+|---|---|
+| 资金 | 1 cell ~$10（不被消耗） |
+| 链上手续费 | 仅 B₁ 一次替换费用，其余 0 |
+| 上行带宽 | ~5 GB（10,000 × 512 KB） |
+| 时间 | 单核心几分钟 |
+
+**影响**:
+- 4.88 GB 攻击者控制数据；OOM 实际可达（推荐 RAM 8-16GB）
+- 旁路 `max_tx_pool_size` 主要内存安全上限 ~27×
+- 默认配置即可触发；无任何特权要求
+- 节点崩溃 → 影响共识参与 / 区块传播
+
+**CVSS 3.1 估算**: `AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H ≈ 6.5–7.5`
+
+**修复建议（P0 — 必修）**:
+1. **字节配额上限替代条目数** — 例如限制 `conflicts_cache` 总字节 ≤ 50 MB；用 `BytesBoundedLruCache` 或在 `record_conflict` 中累计 `tx_size`，超阈值时主动淘汰
+2. **不存储完整 `TransactionView`** — 仅存 `ProposalShortId → Byte32(tx_hash)`，需要恢复时从 chain / `recent_reject` 查
+3. **纳入 `max_tx_pool_size` 总账** — `limit_size()`（pool.rs:292-329）一并清理 `conflicts_cache`
+4. **拒绝超大 RBF 候选入缓存** — 在 line 454 前增加 `if tx.data().total_size() > SOFT_LIMIT { return }`
+5. **per-source 限速** — 单个 RPC 连接 / peer 单位时间内 RBFRejected 数量限速
+
+完整核验过程与降级候选见 [`rounds/round-13-txpool-conflicts-cache-high.md`](rounds/round-13-txpool-conflicts-cache-high.md)。
+
+---
 
 ### 3.1 🟡 Medium — `Signature` API panic 路径与缺 low-S 检查（AUDIT-CRYPTO-001）
 
@@ -274,6 +334,7 @@ let withdraw_capacity =
 - [`rounds/round-10-scriptgroup-fuzz-fee-errinfo.md`](rounds/round-10-scriptgroup-fuzz-fee-errinfo.md) — AUDIT-CONTRACT-005/006 + AUDIT-LOGIC-009 + AUDIT-ERRINFO-003/004
 - [`rounds/round-11-dim-spec-rfc.md`](rounds/round-11-dim-spec-rfc.md) — AUDIT-SPEC-001~005（RFC-0017/0019/0020/0022/0023/0032/0035/0042 映射）
 - [`rounds/round-12-cross-module-cases.md`](rounds/round-12-cross-module-cases.md) — **跨模块用例** XM-001~014 + 6 个新增 AUDIT-XM-* 项
+- [`rounds/round-13-txpool-conflicts-cache-high.md`](rounds/round-13-txpool-conflicts-cache-high.md) — 🟠 **首个 HIGH 级别发现** AUDIT-MEMORY-009（tx-pool conflicts_cache 内存放大 ~27×）
 
 ### 附录 A2 — 模块视角报告
 

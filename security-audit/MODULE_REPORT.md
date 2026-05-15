@@ -15,7 +15,7 @@ CKB workspace 含 **~70 crate**，按职责归为 **11 个模块组**：
 | M1 共识 / 状态机 | `chain`, `verification`, `verification/contextual`, `spec`, `pow` | 11 | 🟢 Low | 8 ✅ / 3 🟢 |
 | M2 经济模型 | `util/dao`, `util/reward-calculator`, `util/proposal-table`, `util/fee-estimator` | 4 | 🟢 Low | 3 ✅ / 1 🟢 |
 | M3 脚本宿主 | `script`, `util/crypto`, `util/multisig` | 6 | 🟡 Medium | 3 ✅ / 1 🟡 / 2 🟢 |
-| M4 交易池 | `tx-pool` | 3 | 🟢 Low | 2 ✅ / 1 🟢 |
+| M4 交易池 | `tx-pool` | 4 | 🟠 **High** | 2 ✅ / 1 🟢 / 1 🟠 |
 | M5 P2P 网络 | `network`, `util/network-alert`, `util/onion` | 8 | 🟢 Low | 5 ✅ / 1 🟢 / 2 ℹ️ |
 | M6 同步/中继 | `sync`, `block-filter`, `util/light-client-protocol-server` | 6 | ✅ | 6 ✅ |
 | M7 RPC 接口 | `rpc`, `util/jsonrpc-types`, `util/app-config` | 9 | 🟢 Low | 6 ✅ / 1 🟢 / 2 ℹ️ |
@@ -123,10 +123,12 @@ CKB workspace 含 **~70 crate**，按职责归为 **11 个模块组**：
 |---|---|---|---|
 | LOGIC-005 | — | ✅ | RBF + 提交-提议窗口正确 |
 | LOGIC-008 | — | ✅ | reorg 期间 RBF TOCTOU — 通过 ChainController 串行化 |
-| MEMORY-003 | — | ✅ | tx-pool 内存上限（max_tx_pool_size + 各 LRU） |
+| MEMORY-003 | — | ✅ | tx-pool 主 pool 上限（max_tx_pool_size + 各 LRU 条目数） |
 | MEMORY-005 | 🟢 Low | ⚠️ | `pool.rs` ≥2 处反模式（参考 round-07） |
+| **MEMORY-009** | **🟠 High** | ⚠️ | **`conflicts_cache` 用条目数（10K）而非字节预算限制；最大 ~4.88GB 旁路 `max_tx_pool_size` ~27×；攻击者免费触发；详见 round-13** |
 
 ### 关键发现
+- 🟠 **High — MEMORY-009**: `conflicts_cache` 内存放大攻击（**Round 13 发现**）。RBF 默认启用 → 攻击者持 1 cell 即可注入 10,000 条 ~512KB 拒绝 tx，旁路 180MB pool 上限。**P0 必修**。
 - 🟢 **Low — MEMORY-005**: 见 `round-07-panic-crypto-since.md#audit-memory-005`，含可达 panic 反模式
 
 ### 责任 owner

@@ -451,6 +451,7 @@
 | AUDIT-MEMORY-005 | 🟢 Low | `transaction_verifier.rs:622, 711` `.expect("...exist")` 改 `Result` 链；CI 启用 `clippy::unwrap_used` 在关键 crate | ⏳ 待修 |
 | AUDIT-CRYPTO-005 | 🟢 Low | `Generator::new()` doc 明确"`ThreadRng` 是 `CryptoRng`，请勿替换为非 CSPRNG"；考虑 `R: CryptoRng + RngCore` 编译期防护 | ⏳ 文档/类型 |
 | AUDIT-LOGIC-007 | 🔵 Info | `transaction_verifier.rs:680, 717` 裸 `+` 改 `checked_add` 显式处理 | ⏳ 代码质量 |
+| **AUDIT-MEMORY-009** | **🟠 HIGH** | `tx-pool/src/pool.rs:31` 将 `CONFLICTES_CACHE_SIZE` 由条目数改字节配额（建议 ≤50MB）；或 `record_conflict` 仅存 `tx_hash` 而非完整 `TransactionView`；或将 `conflicts_cache` 字节计入 `max_tx_pool_size`。详见 [`rounds/round-13-txpool-conflicts-cache-high.md`](rounds/round-13-txpool-conflicts-cache-high.md) | ⏳ **P0 — 必修** |
 
 ---
 
@@ -461,8 +462,6 @@
 3. 对外部输入与回调假设最坏情况
 4. 本文档为 SSoT，跨会话延续，状态变化必更新附录 A/B/C
 5. CKB-VM 合约审计豁免内存对齐；本仓库是宿主 Rust 代码亦无须审计对齐
-
----
 
 ## 附录 D — 跨模块审计用例（Round 12 补充）
 
@@ -500,3 +499,26 @@
 ### 模块责任矩阵速查
 
 详见 [`MODULE_REPORT.md`](MODULE_REPORT.md) 第「跨模块责任矩阵」节，列出 6 个跨模块发现的主责/协责团队。
+
+---
+
+## 附录 E — Round 13 高危发现
+
+> 完整记录见 [`rounds/round-13-txpool-conflicts-cache-high.md`](rounds/round-13-txpool-conflicts-cache-high.md)
+
+### 🟠 AUDIT-MEMORY-009 — tx-pool `conflicts_cache` 内存放大攻击（HIGH）
+
+**位置**: `tx-pool/src/pool.rs:31,48,164-188` + `tx-pool/src/process.rs:225-232,448-456`
+
+**核心问题**: `conflicts_cache` 上限为**条目数 10,000**，每条目存完整 `TransactionView`，每 tx 最大 `TRANSACTION_SIZE_LIMIT = 512KB`。理论上限 **~4.88 GB**，旁路 `max_tx_pool_size = 180MB`（~27 倍放大）。默认 mainnet 配置 RBF 启用，可触发。
+
+**关键路径**: `process.rs:454` 在 `Reject::RBFRejected | Resolve(Dead)` 且 `find_conflict_outpoint.is_some()` 时调用 `record_conflict(tx)` — **攻击者未付费的被拒绝 tx 也会入缓存**。
+
+**攻击成本**: ~$10 cell 资本 + ~5GB 上行带宽（链上手续费 0）。**OOM 实际可达**。
+
+**修复建议（P0 必修）**:
+1. 字节配额上限取代条目数上限（推荐 ≤50MB）
+2. 仅存 `ProposalShortId → Byte32(tx_hash)`，不存完整 TransactionView
+3. 将 `conflicts_cache` 字节计入 `max_tx_pool_size`，在 `limit_size()` 中一并清理
+
+**关联**: round-12 XM-002（rpc × tx-pool）跨模块发现得到具体化升级。
