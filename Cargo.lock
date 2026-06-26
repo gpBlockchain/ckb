@@ -2048,29 +2048,26 @@ dependencies = [
 
 [[package]]
 name = "ckb-vm"
-version = "0.24.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad137e2f1c9a363ce19a883a2113b1dfcc00a936945e34b62e3726c49e7171fb"
+version = "0.24.0"
+source = "git+https://github.com/mohanson-fork/ckb-vm?branch=asm_rv64im#3d621f6de3cfa061cbf87d2d215a1a8aa1f8cc1a"
 dependencies = [
  "byteorder",
  "bytes",
  "cc",
  "ckb-vm-definitions",
- "derive_more 0.99.20",
+ "derive_more 1.0.0",
  "goblin 0.2.3",
  "goblin 0.4.0",
- "rand 0.7.3",
  "scroll",
  "serde",
 ]
 
 [[package]]
 name = "ckb-vm-definitions"
-version = "0.24.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b436017fd6676bea413d54e07a5a9cc1d7c4b5c02e4ab07d3527225a5de6677"
+version = "0.24.0"
+source = "git+https://github.com/mohanson-fork/ckb-vm?branch=asm_rv64im#3d621f6de3cfa061cbf87d2d215a1a8aa1f8cc1a"
 dependencies = [
- "paste",
+ "pastey",
 ]
 
 [[package]]
@@ -2606,6 +2603,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
 dependencies = [
+ "convert_case 0.6.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -4938,6 +4936,12 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "pastey"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b867cad97c0791bbd3aaa6472142568c6c9e8f71937e98379f584cfb0cf35bec"
 
 [[package]]
 name = "path-clean"

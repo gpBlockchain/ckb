@@ -17,7 +17,8 @@ use ckb_vm::{
     bytes::Bytes,
     cost_model::estimate_cycles,
     elf::parse_elf,
-    machine::{CoreMachine, DefaultMachineBuilder, DefaultMachineRunner, Pause, SupportMachine},
+    error::OutOfBoundKind,
+    machine::{CoreMachine, DefaultMachineRunner, Pause, AbstractDefaultMachineBuilder, SupportMachine},
     memory::Memory,
     registers::A0,
     snapshot2::Snapshot2,
@@ -1089,7 +1090,7 @@ where
             snapshot2_context: Arc::new(Mutex::new(Snapshot2Context::new(self.sg_data.clone()))),
         };
 
-        let machine_builder = DefaultMachineBuilder::new(core_machine)
+        let machine_builder = AbstractDefaultMachineBuilder::<M::Inner, M::Decoder>::new(core_machine)
             .instruction_cycle_func(Box::new(estimate_cycles));
         let machine_builder =
             (self.syscall_generator)(id, &self.sg_data, &vm_context, &self.syscall_context)
