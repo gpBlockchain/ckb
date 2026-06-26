@@ -212,7 +212,7 @@ ckb-util = { path = "util", version = "1" }
 ckb-verification = { path = "verification", version = "1" }
 ckb-verification-contextual = { path = "verification/contextual", version = "1" }
 ckb-verification-traits = { path = "verification/traits", version = "1" }
-ckb-vm = { version = "=0.24.14", default-features = false }
+ckb-vm = { version = "=0.24.0", default-features = false }
 clap = "=4.4"
 console = ">=0.9.1, <1.0.0"
 console-subscriber = "0.4.0"
@@ -338,3 +338,6 @@ profiling = ["tikv-jemallocator/profiling", "ckb-bin/profiling"]
 portable = ["ckb-bin/portable"]
 march-native = ["ckb-bin/march-native"]
 tokio-trace = ["console-subscriber"]
+
+[patch.crates-io]
+ckb-vm = { git = "https://github.com/mohanson-fork/ckb-vm", rev = "2411a1328433fd8311cb574a5450825832679ecf" }

@@ -2048,30 +2048,33 @@ dependencies = [
 
 [[package]]
 name = "ckb-vm"
-version = "0.24.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad137e2f1c9a363ce19a883a2113b1dfcc00a936945e34b62e3726c49e7171fb"
+version = "0.24.0"
+source = "git+https://github.com/mohanson-fork/ckb-vm?rev=2411a1328433fd8311cb574a5450825832679ecf#2411a1328433fd8311cb574a5450825832679ecf"
 dependencies = [
- "byteorder",
  "bytes",
  "cc",
  "ckb-vm-definitions",
- "derive_more 0.99.20",
+ "clang-finder",
+ "derive_more 1.0.0",
  "goblin 0.2.3",
  "goblin 0.4.0",
- "rand 0.7.3",
  "scroll",
  "serde",
 ]
 
 [[package]]
 name = "ckb-vm-definitions"
-version = "0.24.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b436017fd6676bea413d54e07a5a9cc1d7c4b5c02e4ab07d3527225a5de6677"
+version = "0.24.0"
+source = "git+https://github.com/mohanson-fork/ckb-vm?rev=2411a1328433fd8311cb574a5450825832679ecf#2411a1328433fd8311cb574a5450825832679ecf"
 dependencies = [
- "paste",
+ "pastey",
 ]
+
+[[package]]
+name = "clang-finder"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62dceea0d6c29826ceac9fd02a0cb6cd30a8a9f1f3d59528d454b233f8790ec2"
 
 [[package]]
 name = "clang-sys"
@@ -2219,6 +2222,15 @@ name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
 
 [[package]]
 name = "convert_case"
@@ -2606,6 +2618,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
 dependencies = [
+ "convert_case 0.6.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -4938,6 +4951,12 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "pastey"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
 
 [[package]]
 name = "path-clean"
