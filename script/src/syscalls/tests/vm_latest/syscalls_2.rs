@@ -89,7 +89,7 @@ fn test_pipe_fd_address_overflow() {
 
     assert!(matches!(
         pipe.ecall(&mut machine),
-        Err(ckb_vm::Error::MemOutOfBound)
+        Err(ckb_vm::Error::MemOutOfBound(..))
     ));
 }
 
@@ -116,7 +116,7 @@ fn test_spawn_args_address_out_of_bound() {
 
     assert!(matches!(
         spawn.ecall(&mut machine),
-        Err(ckb_vm::Error::MemOutOfBound)
+        Err(ckb_vm::Error::MemOutOfBound(..))
     ));
 }
 
@@ -161,7 +161,7 @@ fn test_spawn_inherited_fds_address_out_of_bound() {
 
     assert!(matches!(
         spawn.ecall(&mut machine),
-        Err(ckb_vm::Error::MemOutOfBound)
+        Err(ckb_vm::Error::MemOutOfBound(..))
     ));
 }
 

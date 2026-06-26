@@ -1,12 +1,14 @@
 use byteorder::{ByteOrder, LittleEndian};
 use ckb_vm::{
     Error as VMError, Memory, Register, SupportMachine,
+    error::OutOfBoundKind,
     registers::{A0, A1, A2},
 };
 use std::cmp;
 
 pub(crate) fn checked_add_addr(addr: u64, offset: u64) -> Result<u64, VMError> {
-    addr.checked_add(offset).ok_or(VMError::MemOutOfBound)
+    addr.checked_add(offset)
+        .ok_or(VMError::MemOutOfBound(addr, OutOfBoundKind::Memory))
 }
 
 pub fn store_data<Mac: SupportMachine>(machine: &mut Mac, data: &[u8]) -> Result<u64, VMError> {

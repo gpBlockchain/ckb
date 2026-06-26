@@ -19,6 +19,6 @@ fn test_checked_add_addr() {
     assert_eq!(super::utils::checked_add_addr(7, 8), Ok(15));
     assert!(matches!(
         super::utils::checked_add_addr(u64::MAX, 1),
-        Err(ckb_vm::Error::MemOutOfBound)
+        Err(ckb_vm::Error::MemOutOfBound(..))
     ));
 }
