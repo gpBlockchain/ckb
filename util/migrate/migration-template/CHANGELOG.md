@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1](https://github.com/nervosnetwork/ckb/compare/ckb-migration-template-v1.1.0...ckb-migration-template-v1.1.1) - 2026-06-08
+
+### Changed
+
+- [rust-toolchain] Upgrade Rust toolchain to 1.95.0 (#5175) (by @eval-exec)
+
+### Contributors
+
+- @eval-exec
+
+## [1.1.0](https://github.com/nervosnetwork/ckb/compare/ckb-migration-template-v1.0.2...ckb-migration-template-v1.1.0) - 2026-03-02
+
+### Added
+
+- bump crates MSRV to 1.92.0 ([#5076](https://github.com/nervosnetwork/ckb/pull/5076)) (by @doitian)
+
+### Contributors
+
+- @doitian
+
 ## [1.0.1](https://github.com/nervosnetwork/ckb/compare/ckb-migration-template-v1.0.0...ckb-migration-template-v1.0.1) - 2025-12-10
 
 ### Other

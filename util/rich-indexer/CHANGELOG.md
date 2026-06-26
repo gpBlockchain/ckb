@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2](https://github.com/nervosnetwork/ckb/compare/ckb-rich-indexer-v1.1.1...ckb-rich-indexer-v1.1.2) - 2026-06-08
+
+### Changed
+
+- [rust-toolchain] Upgrade Rust toolchain to 1.95.0 (#5175) (by @eval-exec)
+- Record tip metrics (#5078) (by @eval-exec)
+
+### Contributors
+
+- @eval-exec
+
+## [1.1.1](https://github.com/nervosnetwork/ckb/compare/ckb-rich-indexer-v1.1.0...ckb-rich-indexer-v1.1.1) - 2026-04-24
+
+### Fixed
+
+- preserve leading zero bytes and handle all-0xFF overflow in rich-indexer prefix search upper bound (#5166) (by @Copilot)
+
+### Contributors
+
+- @Copilot
+
+## [1.1.0](https://github.com/nervosnetwork/ckb/compare/ckb-rich-indexer-v1.0.2...ckb-rich-indexer-v1.1.0) - 2026-03-02
+
+### Added
+
+- bump crates MSRV to 1.92.0 ([#5076](https://github.com/nervosnetwork/ckb/pull/5076)) (by @doitian)
+
+### Changed
+
+- Upgrade rust-toolchain from 1.85.0 to 1.92.0 ([#4993](https://github.com/nervosnetwork/ckb/pull/4993)) (by @eval-exec)
+
+### Contributors
+
+- @doitian
+- @eval-exec
+
 ## [1.0.1](https://github.com/nervosnetwork/ckb/compare/ckb-rich-indexer-v1.0.0...ckb-rich-indexer-v1.0.1) - 2025-12-10
 
 ### Other

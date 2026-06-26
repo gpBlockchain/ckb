@@ -1,4 +1,4 @@
-use ckb_chain::ChainController;
+use ckb_chain::{ChainController, ChainServiceScope};
 use ckb_chain_spec::consensus::Consensus;
 use ckb_dao::DaoCalculator;
 use ckb_reward_calculator::RewardCalculator;
@@ -77,6 +77,7 @@ pub(crate) struct RpcTestSuite {
     tcp_uri: Option<String>,
     shared: Shared,
     chain_controller: ChainController,
+    _chain_scope: ChainServiceScope,
     _tmp_dir: tempfile::TempDir,
 }
 
@@ -223,4 +224,12 @@ fn always_success_transaction() -> TransactionView {
 // setup a chain with 20 blocks and enable `Chain`, `Miner` and `Pool` rpc modules for unit test.
 fn setup(consensus: Consensus) -> RpcTestSuite {
     setup_rpc_test_suite(20, Some(consensus))
+}
+
+// Shut down background tasks to release `Arc<Shared>` and allow temp dir cleanup.
+// It's should be safe in this test suite.
+impl Drop for RpcTestSuite {
+    fn drop(&mut self) {
+        ckb_stop_handler::broadcast_exit_signals();
+    }
 }

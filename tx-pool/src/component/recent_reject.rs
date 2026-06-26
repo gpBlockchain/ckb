@@ -1,6 +1,6 @@
 use crate::error::Reject;
 use ckb_db::DBWithTTL;
-use ckb_error::AnyError;
+use ckb_error::{AnyError, OtherError};
 use ckb_types::{packed::Byte32, prelude::*};
 use rand::distributions::Uniform;
 use rand::{Rng, thread_rng};
@@ -41,7 +41,7 @@ impl RecentReject {
             .map(|cf| db.estimate_num_keys_cf(cf))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let total_keys_num = estimate_keys_num.iter().map(|num| num.unwrap_or(0)).sum();
+        let total_keys_num = Self::checked_estimate_sum(&estimate_keys_num)?;
 
         Ok(RecentReject {
             shard_num,
@@ -77,17 +77,37 @@ impl RecentReject {
         Ok(ret.map(|bytes| unsafe { String::from_utf8_unchecked(bytes.to_vec()) }))
     }
 
+    pub fn get_estimate_total_keys_num(&self) -> u64 {
+        self.total_keys_num
+    }
+
+    fn estimate_total_keys_num(&self) -> Result<u64, AnyError> {
+        let estimate_keys_num = (0..self.shard_num)
+            .map(|num| self.db.estimate_num_keys_cf(&num.to_string()))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Self::checked_estimate_sum(&estimate_keys_num).map_err(Into::into)
+    }
+
+    fn checked_estimate_sum(estimate_keys_num: &[Option<u64>]) -> Result<u64, OtherError> {
+        estimate_keys_num.iter().try_fold(0u64, |total, num| {
+            let keys_num = num.unwrap_or(0);
+            total.checked_add(keys_num).ok_or_else(|| {
+                OtherError::new(format!(
+                    "recent reject estimated keys count overflows: {} + {}",
+                    total, keys_num
+                ))
+            })
+        })
+    }
+
     fn shrink(&mut self) -> Result<u64, AnyError> {
         let mut rng = thread_rng();
         let shard = rng.sample(Uniform::new(0, self.shard_num)).to_string();
         self.db.drop_cf(&shard)?;
         self.db.create_cf_with_ttl(&shard, self.ttl)?;
 
-        let estimate_keys_num = (0..self.shard_num)
-            .map(|num| self.db.estimate_num_keys_cf(&num.to_string()))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let total_keys_num = estimate_keys_num.iter().map(|num| num.unwrap_or(0)).sum();
+        let total_keys_num = self.estimate_total_keys_num()?;
         self.total_keys_num = total_keys_num;
         Ok(total_keys_num)
     }
