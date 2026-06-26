@@ -691,10 +691,12 @@ where
                     let copy_length = u64::min(full_length, real_length);
                     for i in 0..copy_length {
                         let fd = inherited_fd[i as usize].0;
-                        let offset = i.checked_mul(8).ok_or(Error::MemOutOfBound)?;
+                        let offset = i
+                            .checked_mul(8)
+                            .ok_or(Error::MemOutOfBound(i, OutOfBoundKind::Memory))?;
                         let addr = buffer_addr
                             .checked_add(offset)
-                            .ok_or(Error::MemOutOfBound)?;
+                            .ok_or(Error::MemOutOfBound(buffer_addr, OutOfBoundKind::Memory))?;
                         machine
                             .inner_mut()
                             .memory_mut()
@@ -817,7 +819,7 @@ where
                 let data = write_machine.inner_mut().memory_mut().load_bytes(
                     write_buffer_addr
                         .checked_add(consumed)
-                        .ok_or(Error::MemOutOfBound)?,
+                        .ok_or(Error::MemOutOfBound(write_buffer_addr, OutOfBoundKind::Memory))?,
                     copiable,
                 )?;
                 let (_, read_machine) = self
